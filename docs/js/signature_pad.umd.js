@@ -226,9 +226,35 @@
             this._strokeMoveUpdate = this.throttle
                 ? throttle(SignaturePad.prototype._strokeUpdate, this.throttle)
                 : SignaturePad.prototype._strokeUpdate;
-            this._ctx = canvas.getContext('2d');
+            const { resizeOptions } = options;
+            if ((resizeOptions === null || resizeOptions === void 0 ? void 0 : resizeOptions.containerElem) && (resizeOptions === null || resizeOptions === void 0 ? void 0 : resizeOptions.window)) {
+                if (resizeOptions.isDesktopOrTablet === undefined) {
+                    resizeOptions.isDesktopOrTablet = true;
+                }
+                const { containerElem, window, isDesktopOrTablet } = resizeOptions;
+                this.resizeCanvas(containerElem, window, canvas, isDesktopOrTablet);
+            }
+            else {
+                this._ctx = canvas.getContext('2d');
+            }
             this.clear();
             this.on();
+        }
+        resizeCanvas(containerElem, window, canvas, isDesktopOrTablet) {
+            const ratio = Math.max((window === null || window === void 0 ? void 0 : window.devicePixelRatio) || 1, 1);
+            const y = containerElem.clientHeight;
+            const x = containerElem.clientWidth;
+            if (isDesktopOrTablet) {
+                canvas.width = (y > 0 ? y - (y * 6) / 100 - 10 : screen.width) * ratio;
+                canvas.height = (x > 0 ? x - (x * 6) / 100 - 10 : screen.height) * ratio;
+            }
+            else {
+                canvas.width = (x > 0 ? x - (x * 6) / 100 - 10 : screen.width) * ratio;
+                canvas.height = (y > 0 ? y - (y * 6) / 100 - 10 : screen.height) * ratio;
+            }
+            this._ctx = canvas.getContext('2d');
+            this._ctx.scale(ratio, ratio);
+            window.onresize = this.resizeCanvas;
         }
         clear() {
             const { _ctx: ctx, canvas } = this;
