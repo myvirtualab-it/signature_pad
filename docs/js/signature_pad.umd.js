@@ -159,6 +159,7 @@
         constructor(canvas, options = {}) {
             super();
             this.canvas = canvas;
+            this.window = window;
             this._handleMouseDown = (event) => {
                 if (event.buttons === 1) {
                     this._drawningStroke = true;
@@ -231,8 +232,9 @@
                 if (resizeOptions.isDesktopOrTablet === undefined) {
                     resizeOptions.isDesktopOrTablet = true;
                 }
-                const { containerElem, window, isDesktopOrTablet } = resizeOptions;
-                this.resizeCanvas(containerElem, window, canvas, isDesktopOrTablet);
+                this.localContainer = resizeOptions.containerElem;
+                this.isDesktopOrTablet = resizeOptions.isDesktopOrTablet;
+                this.resizeCanvas(canvas, resizeOptions.containerElem);
             }
             else {
                 this._ctx = canvas.getContext('2d');
@@ -240,11 +242,11 @@
             this.clear();
             this.on();
         }
-        resizeCanvas(containerElem, window, canvas, isDesktopOrTablet) {
-            const ratio = Math.max((window === null || window === void 0 ? void 0 : window.devicePixelRatio) || 1, 1);
-            const y = containerElem.clientHeight;
-            const x = containerElem.clientWidth;
-            if (isDesktopOrTablet) {
+        resizeCanvas(canvas, container) {
+            const ratio = Math.max(this.window.devicePixelRatio || 1, 1);
+            const y = container.clientHeight;
+            const x = container.clientWidth;
+            if (this.isDesktopOrTablet) {
                 canvas.width = (y > 0 ? y - (y * 6) / 100 - 10 : screen.width) * ratio;
                 canvas.height = (x > 0 ? x - (x * 6) / 100 - 10 : screen.height) * ratio;
             }
@@ -254,7 +256,7 @@
             }
             this._ctx = canvas.getContext('2d');
             this._ctx.scale(ratio, ratio);
-            window.onresize = this.resizeCanvas;
+            this.window.onresize = this.resizeCanvas;
         }
         clear() {
             const { _ctx: ctx, canvas } = this;

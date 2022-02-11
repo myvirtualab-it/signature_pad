@@ -61,6 +61,11 @@ export default class SignaturePad extends SignatureEventTarget {
   public velocityFilterWeight: number;
   public backgroundColor: string;
   public throttle: number;
+  public semaforo: boolean;
+
+  public isDesktopOrTablet: boolean;
+  public window = window;
+  public localContainer: HTMLElement;
 
   // Private stuff
   /* tslint:disable: variable-name */
@@ -114,8 +119,11 @@ export default class SignaturePad extends SignatureEventTarget {
       if (resizeOptions.isDesktopOrTablet === undefined) {
         resizeOptions.isDesktopOrTablet = true;
       }
-      const { containerElem, window, isDesktopOrTablet } = resizeOptions;
-      this.resizeCanvas(containerElem, window, canvas, isDesktopOrTablet);
+
+      this.localContainer = resizeOptions.containerElem;
+      this.isDesktopOrTablet = resizeOptions.isDesktopOrTablet;
+
+      this.resizeCanvas(canvas, resizeOptions.containerElem);
     } else {
       this._ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
     }
@@ -138,16 +146,12 @@ export default class SignaturePad extends SignatureEventTarget {
    * @param canvas
    * @param isDesktopOrTablet
    */
-  public resizeCanvas(
-    containerElem: HTMLElement,
-    window: Window,
-    canvas: HTMLCanvasElement,
-    isDesktopOrTablet: boolean,
-  ): void {
-    const ratio = Math.max(window?.devicePixelRatio || 1, 1);
-    const y = containerElem.clientHeight;
-    const x = containerElem.clientWidth;
-    if (isDesktopOrTablet) {
+
+  public resizeCanvas(canvas: HTMLCanvasElement, container: HTMLElement): void {
+    const ratio = Math.max(this.window.devicePixelRatio || 1, 1);
+    const y = container.clientHeight;
+    const x = container.clientWidth;
+    if (this.isDesktopOrTablet) {
       canvas.width = (y > 0 ? y - (y * 6) / 100 - 10 : screen.width) * ratio;
       canvas.height = (x > 0 ? x - (x * 6) / 100 - 10 : screen.height) * ratio;
     } else {
@@ -156,7 +160,7 @@ export default class SignaturePad extends SignatureEventTarget {
     }
     this._ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
     this._ctx.scale(ratio, ratio);
-    window.onresize = this.resizeCanvas as any;
+    this.window.onresize = this.resizeCanvas as any;
   }
 
   public clear(): void {
