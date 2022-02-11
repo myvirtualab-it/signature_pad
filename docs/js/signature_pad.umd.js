@@ -159,7 +159,6 @@
         constructor(canvas, options = {}) {
             super();
             this.canvas = canvas;
-            this.window = window;
             this._handleMouseDown = (event) => {
                 if (event.buttons === 1) {
                     this._drawningStroke = true;
@@ -228,13 +227,13 @@
                 ? throttle(SignaturePad.prototype._strokeUpdate, this.throttle)
                 : SignaturePad.prototype._strokeUpdate;
             const { resizeOptions } = options;
-            if ((resizeOptions === null || resizeOptions === void 0 ? void 0 : resizeOptions.containerElem) && (resizeOptions === null || resizeOptions === void 0 ? void 0 : resizeOptions.window)) {
+            if (resizeOptions) {
                 if (resizeOptions.isDesktopOrTablet === undefined) {
                     resizeOptions.isDesktopOrTablet = true;
                 }
-                this.localContainer = resizeOptions.containerElem;
-                this.isDesktopOrTablet = resizeOptions.isDesktopOrTablet;
-                this.resizeCanvas(canvas, resizeOptions.containerElem);
+                this._parentContainer = resizeOptions.containerElem;
+                this._isDesktopOrTablet = resizeOptions.isDesktopOrTablet;
+                this.resizeCanvas(canvas);
             }
             else {
                 this._ctx = canvas.getContext('2d');
@@ -242,11 +241,11 @@
             this.clear();
             this.on();
         }
-        resizeCanvas(canvas, container) {
-            const ratio = Math.max(this.window.devicePixelRatio || 1, 1);
-            const y = container.clientHeight;
-            const x = container.clientWidth;
-            if (this.isDesktopOrTablet) {
+        resizeCanvas(canvas) {
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            const y = this._parentContainer.clientHeight;
+            const x = this._parentContainer.clientWidth;
+            if (this._isDesktopOrTablet) {
                 canvas.width = (y > 0 ? y - (y * 6) / 100 - 10 : screen.width) * ratio;
                 canvas.height = (x > 0 ? x - (x * 6) / 100 - 10 : screen.height) * ratio;
             }
@@ -256,7 +255,7 @@
             }
             this._ctx = canvas.getContext('2d');
             this._ctx.scale(ratio, ratio);
-            this.window.onresize = this.resizeCanvas;
+            window.onresize = () => this.resizeCanvas(canvas);
         }
         clear() {
             const { _ctx: ctx, canvas } = this;

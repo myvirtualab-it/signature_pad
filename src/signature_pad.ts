@@ -43,7 +43,6 @@ export interface Options extends Partial<PointGroupOptions> {
 
 export interface ResizeOptions {
   isDesktopOrTablet: boolean;
-  window: Window;
   containerElem: HTMLElement;
 }
 
@@ -63,9 +62,8 @@ export default class SignaturePad extends SignatureEventTarget {
   public throttle: number;
   public semaforo: boolean;
 
-  public isDesktopOrTablet: boolean;
-  public window = window;
-  public localContainer: HTMLElement;
+  private _isDesktopOrTablet: boolean;
+  private _parentContainer: HTMLElement;
 
   // Private stuff
   /* tslint:disable: variable-name */
@@ -115,15 +113,15 @@ export default class SignaturePad extends SignatureEventTarget {
 
     // TODO descrivere
     const { resizeOptions } = options;
-    if (resizeOptions?.containerElem && resizeOptions?.window) {
+    if (resizeOptions) {
       if (resizeOptions.isDesktopOrTablet === undefined) {
         resizeOptions.isDesktopOrTablet = true;
       }
 
-      this.localContainer = resizeOptions.containerElem;
-      this.isDesktopOrTablet = resizeOptions.isDesktopOrTablet;
+      this._parentContainer = resizeOptions.containerElem;
+      this._isDesktopOrTablet = resizeOptions.isDesktopOrTablet;
 
-      this.resizeCanvas(canvas, resizeOptions.containerElem);
+      this.resizeCanvas(canvas);
     } else {
       this._ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
     }
@@ -147,11 +145,11 @@ export default class SignaturePad extends SignatureEventTarget {
    * @param isDesktopOrTablet
    */
 
-  public resizeCanvas(canvas: HTMLCanvasElement, container: HTMLElement): void {
-    const ratio = Math.max(this.window.devicePixelRatio || 1, 1);
-    const y = container.clientHeight;
-    const x = container.clientWidth;
-    if (this.isDesktopOrTablet) {
+  public resizeCanvas(canvas: HTMLCanvasElement): void {
+    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+    const y = this._parentContainer.clientHeight;
+    const x = this._parentContainer.clientWidth;
+    if (this._isDesktopOrTablet) {
       canvas.width = (y > 0 ? y - (y * 6) / 100 - 10 : screen.width) * ratio;
       canvas.height = (x > 0 ? x - (x * 6) / 100 - 10 : screen.height) * ratio;
     } else {
@@ -160,7 +158,7 @@ export default class SignaturePad extends SignatureEventTarget {
     }
     this._ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
     this._ctx.scale(ratio, ratio);
-    this.window.onresize = this.resizeCanvas as any;
+    window.onresize = () => this.resizeCanvas(canvas);
   }
 
   public clear(): void {
