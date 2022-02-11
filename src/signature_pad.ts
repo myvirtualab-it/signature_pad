@@ -127,7 +127,12 @@ export default class SignaturePad extends SignatureEventTarget {
   }
 
   /**
-   *
+   * this function is used to resize the canvas, thanks to the CSS class fill-available, it will fill all the available space.
+   * we made two different type of resize, for desktop with regular coordinates (width = x and height = y) and for mobile ( width = y and height = x)
+   * we had to do that because in ours application we use ionic framework so in mobile layout using ion-col we had to reverse the coordinates in order to have a
+   * good response from the pad.
+   * Please keep the focus on this part (y > 0 ? y - (y * 6) / 100 - 10 : screen.width), we made this little refactor because in ours applications canvas doesn't fill
+   * all the space available, so I had to adapt the canvas (if the canvas fill all the place you can type this code (y > 0 ? y : screen.width))
    * @param containerElem
    * @param window
    * @param canvas
