@@ -38,6 +38,13 @@ export interface Options extends Partial<PointGroupOptions> {
   velocityFilterWeight?: number;
   backgroundColor?: string;
   throttle?: number;
+  resizeOptions?: ResizeOptions;
+}
+
+export interface ResizeOptions {
+  isDesktopOrTablet: boolean;
+  window: Window;
+  containerElem: HTMLElement;
 }
 
 export interface PointGroup extends PointGroupOptions {
@@ -65,8 +72,25 @@ export default class SignaturePad extends SignatureEventTarget {
   private _lastVelocity: number;
   private _lastWidth: number;
   private _strokeMoveUpdate: (event: SignatureEvent) => void;
+
   /* tslint:enable: variable-name */
 
+  /**
+   * Constructor
+   * we suggest this css class on the canvas in order to fill the available space
+   *
+   * .fill-available {
+   *   height: available;
+   *   height: -webkit-fill-available;
+   *   height: -moz-available;
+   *   width: available;
+   *   width: -moz-available;
+   *   width: -webkit-fill-available;
+   * }
+   *
+   * @param canvas
+   * @param options
+   */
   constructor(private canvas: HTMLCanvasElement, options: Options = {}) {
     super();
     this.velocityFilterWeight = options.velocityFilterWeight || 0.7;
@@ -83,12 +107,51 @@ export default class SignaturePad extends SignatureEventTarget {
     this._strokeMoveUpdate = this.throttle
       ? throttle(SignaturePad.prototype._strokeUpdate, this.throttle)
       : SignaturePad.prototype._strokeUpdate;
-    this._ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+
+    // TODO descrivere
+    const { resizeOptions } = options;
+    if (resizeOptions?.containerElem && resizeOptions?.window) {
+      if (resizeOptions.isDesktopOrTablet === undefined) {
+        resizeOptions.isDesktopOrTablet = true;
+      }
+      const { containerElem, window, isDesktopOrTablet } = resizeOptions;
+      this.resizeCanvas(containerElem, window, canvas, isDesktopOrTablet);
+    } else {
+      this._ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+    }
 
     this.clear();
 
     // Enable mouse and touch event handlers
     this.on();
+  }
+
+  /**
+   *
+   * @param containerElem
+   * @param window
+   * @param canvas
+   * @param isDesktopOrTablet
+   */
+  public resizeCanvas(
+    containerElem: HTMLElement,
+    window: Window,
+    canvas: HTMLCanvasElement,
+    isDesktopOrTablet: boolean,
+  ): void {
+    const ratio = Math.max(window?.devicePixelRatio || 1, 1);
+    const y = containerElem.clientHeight;
+    const x = containerElem.clientWidth;
+    if (isDesktopOrTablet) {
+      canvas.width = (y > 0 ? y - (y * 6) / 100 - 10 : screen.width) * ratio;
+      canvas.height = (x > 0 ? x - (x * 6) / 100 - 10 : screen.height) * ratio;
+    } else {
+      canvas.width = (x > 0 ? x - (x * 6) / 100 - 10 : screen.width) * ratio;
+      canvas.height = (y > 0 ? y - (y * 6) / 100 - 10 : screen.height) * ratio;
+    }
+    this._ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+    this._ctx.scale(ratio, ratio);
+    window.onresize = this.resizeCanvas as any;
   }
 
   public clear(): void {
